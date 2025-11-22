@@ -1,0 +1,9 @@
+{
+  "uuid": "start_menu@slim8916.github.io",
+  "name": "Start Menu",
+  "description": "A customizable start menu for GNOME Shell with category management, recent apps, and search functionality.",
+  "shell-version": ["45", "46", "47", "48"],
+  "version": 2,
+  "url": "https://github.com/yourusername/start-menu",
+  "settings-schema": "org.gnome.shell.extensions.start_menu"
+}

@@ -1,0 +1,213 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<interface>
+	<requires lib="gtk" version="4.0"/>
+	<object class="GtkBox" id="prefs_box">
+		<property name="orientation">vertical</property>
+		<property name="spacing">4</property>
+		<property name="hexpand">false</property>
+		<property name="vexpand">false</property>
+		<property name="margin-bottom">0</property>
+		<!-- Category Entry -->
+		<child>
+			<object class="GtkBox" id="category_entry_box">
+				<property name="orientation">horizontal</property>
+				<property name="spacing">4</property>
+				<property name="margin-bottom">16</property>
+				<!-- Icon Button -->
+				<child>
+					<object class="GtkButton" id="category_button">
+						<property name="has-frame">false</property>
+						<property name="tooltip-text">Click to select a custom category icon</property>
+						<property name="accessible-role">button</property>
+						<child>
+							<object class="GtkImage" id="category_icon">
+								<property name="pixel-size">40</property>
+							</object>
+						</child>
+					</object>
+				</child>
+				<!-- Text Entry -->
+				<child>
+					<object class="GtkEntry" id="category_entry">
+						<property name="placeholder-text">Enter a category name...</property>
+						<property name="tooltip-text">Enter a name for your category</property>
+						<property name="accessible-role">textbox</property>
+						<style>
+							<class name="custom-title"/>
+						</style>
+						<property name="hexpand">true</property>
+					</object>
+				</child>
+			</object>
+		</child>
+		<!-- Applications List -->
+		<child>
+			<object class="GtkLabel" id="applications_label">
+				<property name="label">Select Applications:</property>
+				<style>
+					<class name="custom-title"/>
+				</style>
+			</object>
+		</child>
+		<!-- Search Application -->
+		<child>
+			<object class="GtkEntry" id="search_app">
+				<property name="placeholder-text">Search an application...</property>
+				<property name="tooltip-text">Search for applications to add to your category</property>
+				<property name="accessible-role">searchbox</property>
+				<style>
+					<class name="custom-title"/>
+				</style>
+				<property name="hexpand">true</property>
+			</object>
+		</child>
+		<child>
+			<object class="GtkScrolledWindow" id="applications_list_scroll">
+				<property name="hscrollbar-policy">automatic</property>
+				<property name="vscrollbar-policy">automatic</property>
+				<property name="hexpand">true</property>
+				<property name="vexpand">true</property>
+				<child>
+					<object class="GtkListBox" id="applications_list">
+						<property name="sensitive">false</property>
+					</object>
+				</child>
+				<property name="margin-bottom">16</property>
+			</object>
+		</child>
+		<!-- Add Category Button -->
+		<child>
+			<object class="GtkButton" id="add_category_button">
+				<property name="label">Add Category</property>
+				<property name="sensitive">false</property>
+				<property name="tooltip-text">Add a new category with the selected applications</property>
+				<property name="accessible-role">button</property>
+				<style>
+					<class name="custom-title-button"/>
+				</style>
+				<property name="margin-bottom">16</property>
+				<property name="halign">GTK_ALIGN_CENTER</property>
+				<property name="hexpand">false</property>
+			</object>
+		</child>
+		<!-- List of Defined Categories -->
+		<child>
+			<object class="GtkLabel" id="categories_label">
+				<property name="label">Defined Categories:</property>
+				<style>
+					<class name="custom-title"/>
+				</style>
+			</object>
+		</child>
+		<!-- box of show_all_apps_box -->
+		<child>
+			<object class="GtkBox">
+				<property name="orientation">horizontal</property>
+				<property name="spacing">4</property>
+				<property name="margin-bottom">8</property>
+				<child>
+					<object class="GtkScrolledWindow" id="categories_list_scroll">
+						<property name="hscrollbar-policy">automatic</property>
+						<property name="vscrollbar-policy">automatic</property>
+						<property name="hexpand">true</property>
+						<property name="vexpand">true</property>
+						<child>
+							<object class="GtkListBox" id="categories_list_box"></object>
+						</child>
+					</object>
+				</child>
+				<child>
+					<object class="GtkBox">
+						<property name="orientation">vertical</property>
+						<property name="spacing">4</property>
+						<child>
+							<object class="GtkButton" id="up_arrow">
+								<property name="sensitive">False</property>
+								<property name="has-frame">false</property>
+								<child>
+									<object class="GtkImage" id="up_arrow_icon">
+										<property name="pixel-size">36</property>
+									</object>
+								</child>
+							</object>
+						</child>
+						<child>
+							<object class="GtkBox">
+								<property name="vexpand">True</property>
+							</object>
+						</child>
+						<child>
+							<object class="GtkButton" id="down_arrow">
+								<property name="has-frame">false</property>
+								<property name="sensitive">False</property>
+								<child>
+									<object class="GtkImage" id="down_arrow_icon">
+										<property name="pixel-size">36</property>
+									</object>
+								</child>
+							</object>
+						</child>
+					</object>
+				</child>
+			</object>
+		</child>
+		<!-- box of show_all_apps_box -->
+		<child>
+			<object class="GtkBox" id="all_apps_box">
+				<property name="orientation">horizontal</property>
+				<property name="spacing">4</property>
+				<property name="margin-bottom">8</property>
+				<!-- checkbox -->
+				<child>
+					<object class="GtkCheckButton" id="all_apps_checkbox"></object>
+				</child>
+				<!-- Icon Button -->
+				<child>
+					<object class="GtkButton" id="all_apps_button">
+						<property name="has-frame">false</property>
+						<child>
+							<object class="GtkImage" id="all_apps_icon">
+								<property name="pixel-size">36</property>
+							</object>
+						</child>
+					</object>
+				</child>
+				<!-- Text Entry -->
+				<child>
+					<object class="GtkLabel" id="all_apps_label">
+						<property name="label">Add an icon to display all the apps</property>
+					</object>
+				</child>
+			</object>
+		</child>
+		<!-- box of search app -->
+		<child>
+			<object class="GtkBox" id="search_app_box">
+				<property name="orientation">horizontal</property>
+				<property name="spacing">4</property>
+				<property name="margin-bottom">0</property>
+				<!-- checkbox -->
+				<child>
+					<object class="GtkCheckButton" id="search_app_checkbox"></object>
+				</child>
+				<!-- Icon Button -->
+				<child>
+					<object class="GtkButton" id="search_app_button">
+						<property name="has-frame">false</property>
+						<child>
+							<object class="GtkImage" id="search_app_icon">
+								<property name="pixel-size">36</property>
+							</object>
+						</child>
+					</object>
+				</child>
+				<!-- Text Entry -->
+				<child>
+					<object class="GtkLabel" id="search_app_label">
+						<property name="label">Add an icon to search for an app</property>
+					</object>
+				</child>
+			</object>
+		</child>
+	</object>
+</interface>
