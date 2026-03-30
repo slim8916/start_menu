@@ -154,18 +154,10 @@ function getApplicationDirectories() {
  * @returns {St.Widget|St.Icon} Icon widget
  */
 function createIconWidget(iconSize, customIconPath = null, gicon = null) {
-    if (customIconPath) {
-        const icon = new St.Widget({
-            style_class: 'my-image-style',
-            width: iconSize,
-            height: iconSize,
-        });
-        icon.set_style(`background-image: url("file://${customIconPath}");`);
-        return icon;
-    }
-
     return new St.Icon({
-        gicon,
+        gicon: customIconPath
+            ? new Gio.FileIcon({ file: Gio.File.new_for_path(customIconPath) })
+            : gicon,
         style_class: 'system-status-icon',
         icon_size: iconSize,
     });
@@ -903,7 +895,7 @@ export default class StartMenuExtension extends Extension {
     enable() {
         // Initialize paths
         basePath = this.path;
-        filesDir = GLib.build_filenamev([basePath, '.files']);
+        filesDir = GLib.build_filenamev([basePath, 'files']);
         categoriesFilePath = GLib.build_filenamev([filesDir, 'categories.jsonl']);
         recentsFilePath = GLib.build_filenamev([filesDir, 'recents.jsonl']);
         iconDir = GLib.build_filenamev([filesDir, 'icons']);

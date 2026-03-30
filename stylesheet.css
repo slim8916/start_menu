@@ -34,12 +34,6 @@
   border-radius: 16px;
 }
 
-.my-image-style {
-  background-size: contain;
-  background-repeat: no-repeat;
-  background-position: center;
-}
-
 .category-name {
   font-size: 22px;
   font-weight: bold;

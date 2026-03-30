@@ -42,7 +42,7 @@ gnome-extensions prefs start_menu@slim8916.github.io
 ## Troubleshooting
 
 - **Extension not showing**: Restart GNOME Shell and verify with `gnome-extensions list`
-- **Categories not saving**: Check `.files/` directory permissions
+- **Categories not saving**: Check `files/` directory permissions
 - **Custom icons failing**: Use supported formats (PNG, JPG, SVG, etc.)
 
 ## License

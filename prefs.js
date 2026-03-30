@@ -1,8 +1,8 @@
 // prefs.js — GNOME 48+, GTK4, ES Modules
 
 import Gio from 'gi://Gio';
-import Gtk from 'gi://Gtk?version=4.0';
-import Gdk from 'gi://Gdk?version=4.0';
+import Gtk from 'gi://Gtk';
+import Gdk from 'gi://Gdk';
 import GLib from 'gi://GLib';
 import Pango from 'gi://Pango';
 import Adw from 'gi://Adw';
@@ -994,7 +994,7 @@ export default class StartMenuPrefs extends ExtensionPreferences {
     fillPreferencesWindow(window) {
         // Initialize paths
         basePath = this.path;
-        filesDir = GLib.build_filenamev([basePath, '.files']);
+        filesDir = GLib.build_filenamev([basePath, 'files']);
         categoriesFilePath = GLib.build_filenamev([filesDir, 'categories.jsonl']);
         iconDir = GLib.build_filenamev([filesDir, 'icons']);
         iconCategoriesDir = GLib.build_filenamev([iconDir, 'categories']);
