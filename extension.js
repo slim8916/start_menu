@@ -41,6 +41,7 @@ let myPopup = null;
 let monitors = [];
 let reloadTimeoutId = 0;
 let signalConnections = [];
+let idleSourceIds = [];
 let enableGeneration = 0;
 
 // -------- Signal Management --------
@@ -67,6 +68,34 @@ function disconnectAllSignals() {
             obj.disconnect(id);
     });
     signalConnections = [];
+}
+
+/**
+ * Adds an idle callback and tracks it for cleanup.
+ * @param {number} priority - GLib source priority
+ * @param {Function} callback - Idle callback
+ * @returns {number} Source ID
+ */
+function addTrackedIdle(priority, callback) {
+    let sourceId = 0;
+    sourceId = GLib.idle_add(priority, () => {
+        const result = callback();
+
+        if (result !== GLib.SOURCE_CONTINUE)
+            idleSourceIds = idleSourceIds.filter(id => id !== sourceId);
+
+        return result;
+    });
+    idleSourceIds.push(sourceId);
+    return sourceId;
+}
+
+/**
+ * Removes all tracked idle callbacks.
+ */
+function removeAllIdleSources() {
+    idleSourceIds.forEach(sourceId => GLib.source_remove(sourceId));
+    idleSourceIds = [];
 }
 
 // -------- Icon Management --------
@@ -173,7 +202,7 @@ function showApplicationsOverview() {
     if (!Main.overview.visible)
         Main.overview.show();
 
-    GLib.idle_add(GLib.PRIORITY_DEFAULT_IDLE, () => {
+    addTrackedIdle(GLib.PRIORITY_DEFAULT_IDLE, () => {
         Main.overview.viewSelector?.showApps?.();
         return GLib.SOURCE_REMOVE;
     });
@@ -663,7 +692,7 @@ const MyPopup = GObject.registerClass(
                     this.menuItemSearch.add_style_class_name('selected-item');
                     this.menuItemSearch.searchEntry.clutter_text.set_text('');
 
-                    GLib.idle_add(GLib.PRIORITY_DEFAULT_IDLE, () => {
+                    addTrackedIdle(GLib.PRIORITY_DEFAULT_IDLE, () => {
                         this.menuItemSearch.searchEntry.grab_key_focus();
                         return GLib.SOURCE_REMOVE;
                     });
@@ -983,6 +1012,9 @@ export default class StartMenuExtension extends Extension {
 
         // Disconnect all tracked signals
         disconnectAllSignals();
+
+        // Remove tracked idle callbacks
+        removeAllIdleSources();
 
         // Cancel file monitors
         monitors.forEach(monitor => {
