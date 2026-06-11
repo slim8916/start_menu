@@ -114,24 +114,33 @@ function getAllIcons(folderPath) {
  * Loads categories from the categories.jsonl file.
  * @param {Map} categoriesMap - Map to populate with loaded categories
  */
-function loadCategories(categoriesMap) {
+function loadCategories(categoriesMap, callback = null) {
     try {
         const file = Gio.File.new_for_path(categoriesFilePath);
-        const [success, contents] = file.load_contents(null);
+        file.load_contents_async(null, (source, result) => {
+            try {
+                const [success, contents] = source.load_contents_finish(result);
 
-        if (!success)
-            return;
+                if (!success)
+                    return;
 
-        const text = new TextDecoder().decode(contents);
-        const lines = text.split('\n').filter(line => line.trim().length > 0);
+                const text = new TextDecoder().decode(contents);
+                const lines = text.split('\n').filter(line => line.trim().length > 0);
 
-        categoriesMap.clear();
-        lines.forEach(line => {
-            const category = JSON.parse(line);
-            categoriesMap.set(category.name, category);
+                categoriesMap.clear();
+                lines.forEach(line => {
+                    const category = JSON.parse(line);
+                    categoriesMap.set(category.name, category);
+                });
+            } catch (error) {
+                logError(error, 'Failed to load categories.jsonl');
+            } finally {
+                callback?.();
+            }
         });
     } catch (error) {
         logError(error, 'Failed to load categories.jsonl');
+        callback?.();
     }
 }
 
@@ -1011,23 +1020,24 @@ export default class StartMenuPrefs extends ExtensionPreferences {
         );
 
         // Load data and icons
-        loadCategories(categories);
-        allIconCategories = getAllIcons(iconCategoriesDir) || new Map();
-        allIconApps = getAllIcons(iconAppsDir) || new Map();
+        loadCategories(categories, () => {
+            allIconCategories = getAllIcons(iconCategoriesDir) || new Map();
+            allIconApps = getAllIcons(iconAppsDir) || new Map();
 
-        // Clean up uninstalled apps from all categories
-        const changesMade = cleanupCategories();
-        if (changesMade) {
-            saveCategoriesToFile();
-        }
+            // Clean up uninstalled apps from all categories
+            const changesMade = cleanupCategories();
+            if (changesMade) {
+                saveCategoriesToFile();
+            }
 
-        // Build UI
-        const prefsWidget = buildPrefsWidget();
+            // Build UI
+            const prefsWidget = buildPrefsWidget();
 
-        const page = new Adw.PreferencesPage({ title: 'General' });
-        const group = new Adw.PreferencesGroup();
-        group.add(prefsWidget);
-        page.add(group);
-        window.add(page);
+            const page = new Adw.PreferencesPage({ title: 'General' });
+            const group = new Adw.PreferencesGroup();
+            group.add(prefsWidget);
+            page.add(group);
+            window.add(page);
+        });
     }
 }

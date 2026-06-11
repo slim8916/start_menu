@@ -2,6 +2,7 @@
 
 import { Extension } from 'resource:///org/gnome/shell/extensions/extension.js';
 import * as Main from 'resource:///org/gnome/shell/ui/main.js';
+import * as OverviewControls from 'resource:///org/gnome/shell/ui/overviewControls.js';
 import * as PanelMenu from 'resource:///org/gnome/shell/ui/panelMenu.js';
 import * as PopupMenu from 'resource:///org/gnome/shell/ui/popupMenu.js';
 
@@ -40,6 +41,7 @@ let myPopup = null;
 let monitors = [];
 let reloadTimeoutId = 0;
 let signalConnections = [];
+let enableGeneration = 0;
 
 // -------- Signal Management --------
 
@@ -112,24 +114,33 @@ function getAllIcons(folderPath) {
 /**
  * Loads categories from the categories.jsonl file.
  */
-function loadCategoriesFromDisk() {
+function loadCategoriesFromDisk(callback = null) {
     try {
         const file = Gio.File.new_for_path(categoriesFilePath);
-        const [success, contents] = file.load_contents(null);
+        file.load_contents_async(null, (source, result) => {
+            try {
+                const [success, contents] = source.load_contents_finish(result);
 
-        if (!success)
-            return;
+                if (!success)
+                    return;
 
-        const text = new TextDecoder().decode(contents);
-        const lines = text.split('\n').filter(line => line.trim().length > 0);
+                const text = new TextDecoder().decode(contents);
+                const lines = text.split('\n').filter(line => line.trim().length > 0);
 
-        categories.clear();
-        lines.forEach(line => {
-            const category = JSON.parse(line);
-            categories.set(category.name, category);
+                categories.clear();
+                lines.forEach(line => {
+                    const category = JSON.parse(line);
+                    categories.set(category.name, category);
+                });
+            } catch (e) {
+                // First run or missing file - this is expected, not an error
+            } finally {
+                callback?.();
+            }
         });
     } catch (e) {
         // First run or missing file - this is expected, not an error
+        callback?.();
     }
 }
 
@@ -142,6 +153,30 @@ function getApplicationDirectories() {
         GLib.build_filenamev([GLib.get_home_dir(), '.local', 'share', 'applications']),
         '/usr/share/applications',
     ];
+}
+
+/**
+ * Shows the GNOME Shell applications grid.
+ */
+function showApplicationsOverview() {
+    if (typeof Main.overview.showApps === 'function') {
+        Main.overview.showApps();
+        return;
+    }
+
+    if (OverviewControls.ControlsState?.APP_GRID !== undefined &&
+        typeof Main.overview.show === 'function') {
+        Main.overview.show(OverviewControls.ControlsState.APP_GRID);
+        return;
+    }
+
+    if (!Main.overview.visible)
+        Main.overview.show();
+
+    GLib.idle_add(GLib.PRIORITY_DEFAULT_IDLE, () => {
+        Main.overview.viewSelector?.showApps?.();
+        return GLib.SOURCE_REMOVE;
+    });
 }
 
 // -------- UI Item Creation --------
@@ -324,23 +359,32 @@ function createSearchedAppItem(app) {
 /**
  * Loads recent apps from the recents.jsonl file.
  */
-function loadRecentsFromDisk() {
+function loadRecentsFromDisk(callback = null) {
     try {
         const file = Gio.File.new_for_path(recentsFilePath);
-        const [success, contents] = file.load_contents(null);
+        file.load_contents_async(null, (source, result) => {
+            try {
+                const [success, contents] = source.load_contents_finish(result);
 
-        if (!success)
-            return;
+                if (!success)
+                    return;
 
-        const text = new TextDecoder().decode(contents);
-        const lines = text.split('\n').filter(line => line.trim().length > 0);
+                const text = new TextDecoder().decode(contents);
+                const lines = text.split('\n').filter(line => line.trim().length > 0);
 
-        recents = lines
-            .map(line => JSON.parse(line))
-            .filter(recent => recent && typeof recent.id === 'string')
-            .slice(0, MAX_RECENTS);
+                recents = lines
+                    .map(line => JSON.parse(line))
+                    .filter(recent => recent && typeof recent.id === 'string')
+                    .slice(0, MAX_RECENTS);
+            } catch (e) {
+                recents = [];
+            } finally {
+                callback?.();
+            }
+        });
     } catch (e) {
         recents = [];
+        callback?.();
     }
 }
 
@@ -524,14 +568,7 @@ const MyPopup = GObject.registerClass(
 
                 connectAndTrack(menuItem, 'activate', () => {
                     this.menu.close();
-
-                    if (!Main.overview.visible)
-                        Main.overview.show();
-
-                    GLib.idle_add(GLib.PRIORITY_DEFAULT_IDLE, () => {
-                        Main.overview.viewSelector?.showApps?.();
-                        return GLib.SOURCE_REMOVE;
-                    });
+                    showApplicationsOverview();
                 });
 
                 connectAndTrack(menuItem, 'enter-event', () => {
@@ -869,10 +906,14 @@ function setupCategoriesFileWatcher() {
                     GLib.PRIORITY_DEFAULT,
                     RELOAD_DELAY_MS,
                     () => {
-                        loadCategoriesFromDisk();
-                        allIconCategories = getAllIcons(iconCategoriesDir);
-                        allIconApps = getAllIcons(iconAppsDir);
-                        rebuildCategoriesMenu();
+                        loadCategoriesFromDisk(() => {
+                            if (!myPopup)
+                                return;
+
+                            allIconCategories = getAllIcons(iconCategoriesDir);
+                            allIconApps = getAllIcons(iconAppsDir);
+                            rebuildCategoriesMenu();
+                        });
                         reloadTimeoutId = 0;
                         return GLib.SOURCE_REMOVE;
                     }
@@ -893,6 +934,8 @@ function setupCategoriesFileWatcher() {
  */
 export default class StartMenuExtension extends Extension {
     enable() {
+        const currentGeneration = ++enableGeneration;
+
         // Initialize paths
         basePath = this.path;
         filesDir = GLib.build_filenamev([basePath, 'files']);
@@ -904,8 +947,24 @@ export default class StartMenuExtension extends Extension {
         pathCategoryGenericIcon = GLib.build_filenamev([iconDir, 'category_icon.png']);
 
         // Load data
-        loadCategoriesFromDisk();
-        loadRecentsFromDisk();
+        let pendingLoads = 2;
+        const finishInitialLoad = () => {
+            pendingLoads--;
+
+            if (pendingLoads > 0 || currentGeneration !== enableGeneration)
+                return;
+
+            this._finishEnable(currentGeneration);
+        };
+
+        loadCategoriesFromDisk(finishInitialLoad);
+        loadRecentsFromDisk(finishInitialLoad);
+    }
+
+    _finishEnable(currentGeneration) {
+        if (currentGeneration !== enableGeneration || myPopup)
+            return;
+
         allIconCategories = getAllIcons(iconCategoriesDir);
         allIconApps = getAllIcons(iconAppsDir);
         allApps = Gio.AppInfo.get_all();
@@ -920,6 +979,8 @@ export default class StartMenuExtension extends Extension {
     }
 
     disable() {
+        enableGeneration++;
+
         // Disconnect all tracked signals
         disconnectAllSignals();
 
